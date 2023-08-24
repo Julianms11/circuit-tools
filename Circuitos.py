@@ -1,7 +1,7 @@
 import cmath as cm
 import numpy as np
 from Fuente import FuentesY, FuentesD
-from transformations import imp_DtoY, imp_YtoD
+from imps import Impedancia
 
 class DeltaDelta:
     def __init__(self, F, Z):
@@ -14,6 +14,10 @@ class DeltaDelta:
                   VBC/Z[1], # Ibc
                   VCA/Z[2]] # Ica
         i_f_ab, i_f_bc, i_f_ca = i_fase
+        self.i_linea_aux = [i_f_ab-i_f_ca,
+                    i_f_bc-i_f_ab,
+                    i_f_ca-i_f_bc]
+        
         i_linea = [cm.polar(i_f_ab-i_f_ca),
                     cm.polar(i_f_bc-i_f_ab),
                     cm.polar(i_f_ca-i_f_bc)]
@@ -43,6 +47,7 @@ class DeltaDelta:
     
     def i_linea(self):
         return self.corrientes_de_linea
+    
     
     def __str__(self):
         return f"""Tensiones de fase:\n{self.tensiones_de_fase}
@@ -113,7 +118,7 @@ class EstrellaEstrella3Hilos:
         V_matrix = np.array([VAN-VBN, VBN-VCN])
         I_matrix = np.linalg.solve(Z_matrix, V_matrix) # [I1, I2]
 
-        t_fase = F.polar()
+        
 
         IAa = I_matrix[0] 
         IBb = I_matrix[1]-I_matrix[0]
@@ -128,24 +133,41 @@ class EstrellaEstrella3Hilos:
         Van = Ian*Z[0]
         Vbn = Ibn*Z[1]
         Vcn = Icn*Z[2]
-        t_linea = [Van, Vbn, Vcn]
+        t_fase = [Van, Vbn, Vcn]
+        t_fase = [cm.polar(t_fase[0]),
+                    cm.polar(t_fase[1]),
+                    cm.polar(t_fase[2])]
+        t_fase = [(round(t_fase[0][0],6), round(np.degrees(t_fase[0][1]),6)), # Van
+                    (round(t_fase[1][0],6), round(np.degrees(t_fase[1][1]),6)), # Vbn
+                    (round(t_fase[2][0],6), round(np.degrees(t_fase[2][1]),6))]
+        
+
+        t_linea = [Van-Vbn, Vbn-Vcn, Vcn-Van]
         t_linea = [cm.polar(t_linea[0]),
                    cm.polar(t_linea[1]),
                    cm.polar(t_linea[2])]
-        t_linea = [(t_linea[0][0], np.degrees(t_linea[0][1])), # Vab
-                     (t_linea[1][0], np.degrees(t_linea[1][1])), # Vbc
-                     (t_linea[2][0], np.degrees(t_linea[2][1]))]
-        VNn = -VAN + Van # Corrimiento de neutro
-        VNn = cm.polar(VNn)
-        VNn = (VNn[0], np.degrees(VNn[1]))
+        t_linea = [(round(t_linea[0][0],6), round(np.degrees(t_linea[0][1]),6)), # Vab
+                     (round(t_linea[1][0],6), round(np.degrees(t_linea[1][1]),6)), # Vbc
+                     (round(t_linea[2][0],6), round(np.degrees(t_linea[2][1]),6))]
+        
+        # Corrimiento de neutro
+        VNn1 = -VAN + Van 
+        VNn1 = cm.polar(VNn1)
+        VNn1 = (round(VNn1[0], 6), round(np.degrees(VNn1[1]), 6))
+        VNn2 = -VBN + Vbn
+        VNn2 = cm.polar(VNn2)
+        VNn2 = (round(VNn2[0], 6), round(np.degrees(VNn2[1]), 6))
+        VNn3 = -VCN + Vcn
+        VNn3 = cm.polar(VNn3)
+        VNn3 = (round(VNn3[0], 6), round(np.degrees(VNn3[1]), 6))
         
 
         i_fase = [cm.polar(i_fase[0]),
                     cm.polar(i_fase[1]),
                     cm.polar(i_fase[2])]
-        i_fase = [(i_fase[0][0], np.degrees(i_fase[0][1])), # Ian
-                    (i_fase[1][0], np.degrees(i_fase[1][1])), # Ibn
-                    (i_fase[2][0], np.degrees(i_fase[2][1]))]
+        i_fase = [(round(i_fase[0][0],6), round(np.degrees(i_fase[0][1]),6)), # Ian
+                    (round(i_fase[1][0],6), round(np.degrees(i_fase[1][1]),6)), # Ibn
+                    (round(i_fase[2][0],6), round(np.degrees(i_fase[2][1]),6))]
         i_linea = i_fase
 
 
@@ -153,7 +175,7 @@ class EstrellaEstrella3Hilos:
         self.tensiones_de_linea = t_linea
         self.corrientes_de_fase = i_fase
         self.corrientes_de_linea = i_linea
-        self.corrimiento_neutro = VNn
+        self.corrimiento_neutro = [VNn1, VNn2, VNn3]
 
     def t_fase(self):
         return self.tensiones_de_fase
@@ -179,44 +201,44 @@ class DeltaEstrella:
     def __init__(self, F:FuentesD, Z):
         self. fuentes = F
         self.impedancias = Z
-        self.impedanciasD = imp_YtoD(Z)
-        VAB, VBC, VCA = F.rect()
+        self.impedanciasD = Impedancia.imp_YtoD(Z)
+        self.delta_delta = DeltaDelta(F, self.impedanciasD)
+
         # Corriente de linea:
-        aux_i_fase = [VAB/self.impedanciasD[0], # Iab
-                        VBC/self.impedanciasD[1], # Ibc
-                        VCA/self.impedanciasD[2]] # Ica
-        aux_i_f_ab, aux_i_f_bc, aux_i_f_ca = aux_i_fase
-        aux_i_linea = [aux_i_f_ab-aux_i_f_ca,
-                    aux_i_f_bc-aux_i_f_ab,
-                    aux_i_f_ca-aux_i_f_bc]
-        i_linea = [cm.polar(aux_i_linea[0]),
-                    cm.polar(aux_i_linea[1]),
-                    cm.polar(aux_i_linea[2])]
-        
-        i_linea = [(i_linea[0][0], np.degrees(i_linea[0][1])), # Iab
-                     (i_linea[1][0], np.degrees(i_linea[1][1])), # Ibc
-                        (i_linea[2][0], np.degrees(i_linea[2][1]))]
+        i_linea = self.delta_delta.i_linea_aux
+
         # Corriente de fase:
         i_fase = i_linea
-        # Tension de linea:
-        t_linea = [VAB, VBC, VCA]
-        t_linea = F.polar()
+
         # Tension de fase:
-        t_fase = [aux_i_linea[0]*Z[0], aux_i_linea[1]*Z[1], aux_i_linea[2]*Z[2]]
+        t_fase = [i_fase[0]*Z[0], i_fase[1]*Z[1], i_fase[2]*Z[2]]
         t_fase = [cm.polar(t_fase[0]),
                     cm.polar(t_fase[1]),
                     cm.polar(t_fase[2])]
-        t_fase = [(t_fase[0][0], np.degrees(t_fase[0][1])), # Vab
-                        (t_fase[1][0], np.degrees(t_fase[1][1])), # Vbc
-                        (t_fase[2][0], np.degrees(t_fase[2][1]))]
-        
+        t_fase = [(round(t_fase[0][0],6), round(np.degrees(t_fase[0][1]),6)), # Vab
+                    (round(t_fase[1][0],6), round(np.degrees(t_fase[1][1]),6)), # Vbc
+                    (round(t_fase[2][0],6), round(np.degrees(t_fase[2][1]),6))]
+
+        # Tension de linea:
+        t_linea = F.polar()
+
+        i_linea = [cm.polar(i_linea[0]),
+                    cm.polar(i_linea[1]),
+                    cm.polar(i_linea[2])]
+        i_linea = [(round(i_linea[0][0],6), round(np.degrees(i_linea[0][1]),6)), # Iab
+                   (round(i_linea[1][0],6), round(np.degrees(i_linea[1][1]),6)), # Ibc
+                    (round(i_linea[2][0],6), round(np.degrees(i_linea[2][1]),6))] # Ica 
+        i_fase = i_linea           
+
         self.tensiones_de_fase = t_fase
         self.tensiones_de_linea = t_linea
         self.corrientes_de_fase = i_fase
         self.corrientes_de_linea = i_linea
         # Corrimiento del neutro:
-
-
+        F.toY()
+        fuentesY= FuentesY(F.VAN[0], F.VAN[1])
+        self.estrella_estrella = EstrellaEstrella3Hilos(fuentesY, Z)
+        self.corrimiento_neutro = self.estrella_estrella.corrimiento_neutro
         # Construir el circuito en Y-Y y calcular el corrimiento del neutro en Y-Y
 
     def t_fase(self):
@@ -235,21 +257,74 @@ class DeltaEstrella:
         return f"""Tensiones de fase:\n{self.tensiones_de_fase}
 Tensiones de linea:\n{self.tensiones_de_linea}
 Corrientes de fase:\n{self.corrientes_de_fase}
-Corrientes de linea:\n{self.corrientes_de_linea}"""
+Corrientes de linea:\n{self.corrientes_de_linea}
+Corrimiento de neutro:\n{self.corrimiento_neutro}"""
     
-
 
 class EstrellaDelta:
     def __init__(self, F:FuentesY, Z):
         self.fuentes = F
-        self.fuentes.toD()
         self.impedancias = Z
-        VAB = self.fuentes.VAB
-        VBC = self.fuentes.VBC
-        VCA = self.fuentes.VCA
-        VAB = cm.rect(VAB[0], np.radians(VAB[1]))
-        VBC = cm.rect(VBC[0], np.radians(VBC[1]))
-        VCA = cm.rect(VCA[0], np.radians(VCA[1]))
+
+        F.toD()
+        fuentesD = FuentesD(F.VAB[0], F.VAB[1])
+        self.delta_delta = DeltaDelta(fuentesD, Z)
+
+        # Corriente de linea:
+        i_linea = self.delta_delta.i_linea_aux
+        i_linea = [cm.polar(i_linea[0]),
+                    cm.polar(i_linea[1]),
+                    cm.polar(i_linea[2])]
+        i_linea = [(round(i_linea[0][0],6), round(np.degrees(i_linea[0][1]),6)), # Iab
+                     (round(i_linea[1][0],6), round(np.degrees(i_linea[1][1]),6)), # Ibc
+                      (round(i_linea[2][0],6), round(np.degrees(i_linea[2][1]),6))]
+        
+
+        # Corriente de fase:
+        i_fase = self.delta_delta.i_fase()
+        i_fase = [(round(i_fase[0][0],6), round(i_fase[0][1],6)),
+                  (round(i_fase[1][0],6), round(i_fase[1][1],6)),
+                  (round(i_fase[2][0],6), round(i_fase[2][1],6))]
+
+        # Tension de fase:
+        t_fase = F.polar()
+
+        # Tension de linea:
+        t_linea = [(round(F.VAB[0],6), round(F.VAB[1],6)),
+                   (round(F.VBC[0],6), round(F.VBC[1]),6),
+                   (round(F.VCA[0],6), round(F.VCA[1]),6)]
+
+        self.tensiones_de_fase = t_fase
+        self.tensiones_de_linea = t_linea
+        self.corrientes_de_fase = i_fase
+        self.corrientes_de_linea = i_linea
+        # Corrimiento del neutro:
+        fuentesY= FuentesY(F.VAN[0], F.VAN[1])
+        self.estrella_estrella = EstrellaEstrella3Hilos(fuentesY, Z)
+        self.corrimiento_neutro = self.estrella_estrella.corrimiento_neutro
+
+    def t_fase(self):
+        return self.tensiones_de_fase
+    
+    def t_linea(self):
+        return self.tensiones_de_linea
+    
+    def i_fase(self):
+        return self.corrientes_de_fase
+    
+    def i_linea(self):
+        return self.corrientes_de_linea
+    
+    def __str__(self):
+        return f"""Tensiones de fase:\n{self.tensiones_de_fase}
+Tensiones de linea:\n{self.tensiones_de_linea}
+Corrientes de fase:\n{self.corrientes_de_fase}
+Corrientes de linea:\n{self.corrientes_de_linea}
+Corrimiento de neutro:\n{self.corrimiento_neutro}"""
+    
+
+
+
   
         
 
