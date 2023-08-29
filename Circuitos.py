@@ -74,6 +74,7 @@ class EstrellaEstrella:
 
         t_fase = F.polar()
         t_linea = [VAN-VBN, VBN-VCN, VCN-VAN]
+        t_linea_aux = t_linea
         t_linea = [cm.polar(t_linea[0]),
                    cm.polar(t_linea[1]),
                    cm.polar(t_linea[2])]
@@ -83,7 +84,8 @@ class EstrellaEstrella:
 
         i_fase = [VAN/Z[0], # Ian
                   VBN/Z[1], # Ibn
-                  VCN/Z[2]] # Icn     
+                  VCN/Z[2]] # Icn 
+        i_fase_aux = i_fase    
         i_fase = [cm.polar(i_fase[0]), 
                   cm.polar(i_fase[1]),
                   cm.polar(i_fase[2])] 
@@ -94,9 +96,10 @@ class EstrellaEstrella:
         i_linea = i_fase
 
         # Potencia compleja
-        S = [VAN*np.conjugate(i_fase[0])+
-             VBN*np.conjugate(i_fase[1])+
-             VCN*np.conjugate(i_fase[2])]
+        S = [(VAN*np.conjugate(i_fase_aux[0]))+
+             (VBN*np.conjugate(i_fase_aux[1]))+
+             (VCN*np.conjugate(i_fase_aux[2]))]
+
 
         self.tensiones_de_fase = t_fase
         self.tensiones_de_linea = t_linea
@@ -136,9 +139,9 @@ class DeltaEstrella:
 
         # Corriente de linea:
         i_linea = self.delta_delta.i_linea_aux
-
         # Corriente de fase:
         i_fase = i_linea
+        i_fase_aux = i_fase
 
         # Tension de fase:
         t_fase = [i_fase[0]*Z[0], i_fase[1]*Z[1], i_fase[2]*Z[2]]
@@ -162,9 +165,9 @@ class DeltaEstrella:
         i_fase = i_linea           
 
         # Potencia compleja
-        S = [t_fase_aux[0]*np.conjugate(i_fase[0])+
-                t_fase_aux[1]*np.conjugate(i_fase[1])+
-                t_fase_aux[2]*np.conjugate(i_fase[2])]
+        S = [t_fase_aux[0]*np.conjugate(i_fase_aux[0])+
+             t_fase_aux[1]*np.conjugate(i_fase_aux[1])+
+             t_fase_aux[2]*np.conjugate(i_fase_aux[2])]
 
         self.tensiones_de_fase = t_fase
         self.tensiones_de_linea = t_linea
@@ -224,22 +227,32 @@ class EstrellaDelta:
 
         # Corriente de fase:
         i_fase = self.delta_delta.i_fase()
+        i_fase_aux = i_fase
+        i_fase_aux = [cm.rect(i_fase_aux[0][0], np.radians(i_fase_aux[0][1])),
+                      cm.rect(i_fase_aux[1][0], np.radians(i_fase_aux[1][1])),
+                      cm.rect(i_fase_aux[2][0], np.radians(i_fase_aux[2][1]))]
         i_fase = [(round(i_fase[0][0],6), round(i_fase[0][1],6)),
                   (round(i_fase[1][0],6), round(i_fase[1][1],6)),
                   (round(i_fase[2][0],6), round(i_fase[2][1],6))]
 
         # Tension de fase:
         t_fase = F.polar()
-
         # Tension de linea:
         t_linea = [(round(F.VAB[0],6), round(F.VAB[1],6)),
                    (round(F.VBC[0],6), round(F.VBC[1]),6),
                    (round(F.VCA[0],6), round(F.VCA[1]),6)]
-
+        print(t_linea)
+        t_linea_aux = t_linea
+        t_linea_aux = [cm.rect(t_linea_aux[0][0], np.radians(t_linea_aux[0][1])),
+                       cm.rect(t_linea_aux[1][0], np.radians(t_linea_aux[1][1])),
+                       cm.rect(t_linea_aux[2][0], np.radians(t_linea_aux[2][1]))]
         # Potencia compleja
-        S = [fuentesD.VAB*np.conjugate(i_fase[0])+
-             fuentesD.VBC*np.conjugate(i_fase[1])+
-             fuentesD.VCA*np.conjugate(i_fase[2])]
+
+        S = [t_linea_aux[0]*np.conjugate(i_fase_aux[0])+
+             t_linea_aux[1]*np.conjugate(i_fase_aux[1])+
+             t_linea_aux[2]*np.conjugate(i_fase_aux[2])]
+        
+        # S = ((cm.rect(207.85, np.radians(30)))*np.conjugate(cm.rect(1.386, np.radians(-23.13))))
         
 
         self.tensiones_de_fase = t_fase
