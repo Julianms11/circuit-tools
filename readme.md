@@ -6,7 +6,7 @@ Para instalar el proyecto debe clonar el repositorio, crear un entorno virtual d
 #Windows
 git clone https://github.com/Julianms11/circuit-tools
 python -m venv nombre-entorno
-pip install
+pip install -r requirements.txt
 ```
 
 ## Uso
