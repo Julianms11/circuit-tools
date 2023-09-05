@@ -9,12 +9,6 @@ class FuentesY:
         self.VBN = [V, ang-120]
         self.VCN = [V, ang-240]
 
-    # def __init__(self, V, f, ang):
-    #     self.VAN = [V, ang]
-    #     self.VBN = [V, ang-120]
-    #     self.VCN = [V, ang-240]
-    #     self.f = f
-
     def __str__(self):
         return str(self.V)
     
@@ -39,12 +33,6 @@ class FuentesD:
         self.VAB = [V, ang]
         self.VBC = [V, ang-120]
         self.VCA = [V, ang+120]
-
-    # def __init__(self, V, f, ang):
-    #     self.VAB = [V, ang]
-    #     self.VBC = [V, ang-120]
-    #     self.VCA = [V, ang-240]
-    #     self.f = f
 
     def __str__(self):
         return str(self.V)
